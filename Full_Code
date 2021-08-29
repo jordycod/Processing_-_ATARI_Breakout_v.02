@@ -1,0 +1,332 @@
+//AP2 - EXPANSÃO DE CÓDIGO
+//Jordy Muniz Araúo
+//Programação II - Horário 20h
+//Matrícula: 500872
+
+//Classes.
+Bola a, b;
+Barra Barra;
+Blocos[][] Blocos;
+
+//Variáveis elementos gráficos.
+int linhas, colunas, pontos, vidas;
+int corTexto, corFundo, corElementos, opacidade;
+boolean fase1 = true, fase2 = false;
+PImage bola, life, points;
+
+void setup() {
+  size(750, 750);
+  imageMode(CENTER);
+  rectMode(CENTER);
+  textAlign(CENTER);
+  textSize(height/50);
+  noStroke();
+
+  //Atributos gráficos básicos, contadores e elementos gráficos estáticos.
+  corElementos = 250;
+  corTexto = 200;
+  corFundo = 20;
+  opacidade = 150;
+
+  pontos = 0;
+  vidas = 5;  
+  linhas = 2;
+  colunas = 4; 
+  mostraCenario(colunas, linhas);
+}
+
+//Ativação/Exibição de funções e elementos gráficos móveis.
+void draw() {
+  background(corFundo);
+
+  if (fase1 == true) {
+    a.desenha();
+    Barra.desenha();
+  } 
+  if (fase2 == true) {
+    a.desenha();
+    b.desenha();
+    Barra.desenha();
+  }
+
+  a.checaBarra(Barra);
+  b.checaBarra(Barra);
+
+  mostrarBlocos(); 
+  mostraElementos();
+}
+class Bola {
+  float xBola, yBola, Vx, Vy, diamBola;
+  int pontMaxima = linhas * colunas;
+  boolean iniciar;
+
+  Bola() { //Atributos da função Bola.
+    diamBola = height/40;
+    xBola = width/2;
+    yBola = height/10 * 9 - diamBola;
+
+    Vx = random(-5, 5);
+    Vy = -15;
+    iniciar = false;
+  }
+
+  void desenha () {
+    bola = loadImage("bola.png");
+    image(bola, xBola, yBola, diamBola+5, diamBola+5);
+    mover();
+  }
+
+  void mover() {
+    if (iniciar == true) { //Incremento nas velocidades de X e Y da bola.
+      xBola += Vx;
+      yBola += Vy;
+
+      //Colisão nas bordas da desenha.
+      if (xBola < diamBola/2) { //Esquerda.
+        Vx *= -1;
+        xBola = diamBola/2;
+      }      
+      if (xBola > width-diamBola/2) { //Direita.
+        Vx *= -1;
+        xBola = width-diamBola/2;
+      }
+      if (yBola < (int)diamBola/2) { //Cima.
+        Vy *= -1;
+      } else if (yBola > Barra.yBarra + 1.5*diamBola) { //Baixo (bola fora). Reiniciar.
+        iniciar = false;
+        yBola = Barra.yBarra - diamBola;
+        vidas--;
+      }
+    } else {
+      xBola = mouseX;
+    }
+    if (fase1 == true && pontos == pontMaxima || fase2 == true && pontos == pontMaxima) { 
+      msgFim();
+      xBola = mouseX;
+      yBola = height/10 *9 - diamBola;
+    }
+  }
+
+  void checaBarra(Barra Barra) {
+
+    //Condições para colisão com a barra.
+    if (xBola > Barra.xBarra - Barra.wBarra/2 && xBola < Barra.xBarra + Barra.wBarra/2 && yBola > Barra.yBarra - diamBola && yBola < Barra.yBarra+diamBola/10) {
+
+      //Variações de velocidade de acordo com o ponto de colisão na barra.
+      Vx *= (xBola - mouseX)/10;
+
+      if (Vx > 5) {
+        Vx = 5;
+      }
+      if (Vx < -5) {
+        Vx = -5;
+      }
+      if (Vx < 0) {
+        Vy = -15 - Vx;
+      } 
+      if (Vx > 0) {
+        Vy = -15 + Vx;
+      }
+    }
+  }
+}
+
+class Barra {
+  float xBarra, yBarra, wBarra, hBarra;
+
+  Barra() {
+    wBarra = height/5;
+    hBarra = height/50;
+    xBarra = width/2;
+    yBarra = height - height/10;
+  }
+
+  void desenha() {
+    rectMode(CENTER);
+    fill(corElementos);
+    rect(xBarra, yBarra, wBarra, hBarra, 3);
+    //barra = loadImage("barra.png");
+    //image(barra, xBarra, yBarra, wBarra, hBarra);
+    mover();
+  }
+
+  void mover() {
+    xBarra = mouseX; 
+
+    if (mouseX >= width - wBarra/2) { //Limite de movimento da barra à direita.
+      xBarra = width - wBarra/2;
+    } 
+    if (mouseX <= wBarra/2) { //Limite de movimento da barra à esquerda.
+      xBarra = wBarra/2;
+    }
+  }
+}
+
+class Blocos {
+  int x, y, w, h;
+  int numBlocos;
+  boolean status;
+
+  Blocos(int colunas, int linhas, int QuantBlocos) {
+    numBlocos = QuantBlocos;
+
+    w = width/numBlocos;
+    h = height/30;
+    x = (w * colunas);
+    y = h * linhas;
+    status = true;
+  }
+
+  //Desenho de blocos.
+  void desenha() {
+    if (status) {
+      rectMode(CENTER);
+      fill(corElementos);
+      rect(x+w/2, y, w-w/5, h-h/2, 2);
+    }
+  }
+
+  //Colisão e destruição de blocos.
+  void checaBola(Bola Bola) {
+    if (status) {
+      //Baixo
+      if (Bola.xBola > x && Bola.xBola < x+w && Bola.yBola < (y+h+Bola.diamBola)&& Bola.yBola>y+h) {
+        Bola.Vy *= -1;
+        status=false;
+        pontos++;
+      }
+      //Cima
+      if (Bola.xBola > x && Bola.xBola < x+w && Bola.yBola > y-Bola.diamBola && Bola.yBola < y) {
+        Bola.Vy *= -1;
+        status=false;
+        pontos++;
+      }
+      //Esquerda
+      if (Bola.xBola > x - Bola.diamBola && Bola.yBola > y && Bola.yBola < y+h && Bola.xBola < x) {
+        Bola.Vx *= -1;
+        status=false;
+        pontos++;
+      }
+      //Direita
+      if (Bola.xBola > x+w  && Bola.yBola > y && Bola.yBola < y+h && Bola.xBola<x+w+Bola.diamBola) {
+        Bola.Vx *= -1;
+        status=false;
+        pontos++;
+      }
+    }
+  }
+}
+
+void mostraElementos() {
+  strokeWeight(height/80);
+  stroke(corElementos);
+  noFill();
+  rectMode(CORNER);
+  rect(0, 0, width, height);
+  strokeWeight(0);
+
+  //Título
+  fill(corTexto);
+  text("BREAKOUT - ATARI, BY JORDY MUNIZ", width/2, height-height/30);
+
+  //Pontuação no canto inferior direito da tela.
+  points = loadImage("points.png");
+  image(points, width/10*8.2, height-height/25, height/40, height/40);
+  fill(corTexto);
+  text("PONTOS: " + pontos, width/10*9, height-height/30);
+
+  //Contador de vidas no canto inferior esquerdo da tela.
+  life = loadImage("vidas.png");
+  image(life, width/25, height-height/25, height/50, height/50);
+  fill(corTexto);  
+  text("VIDAS: " + vidas, width/10, height-height/30);
+
+  //Condição para mensagem de fim de jogo, caso as vidas cheguem a zero.
+  if (vidas == 0) { 
+    fill(corTexto);  
+    text("SUAS VIDAS ACABARAM!", width/2, height/2.3);
+    text("CLIQUE EM QUALQUER LUGAR PARA REINICIAR.", width/2, height/2);
+  }
+}
+
+//Mensagem de encerramento quando a pontuação máxima é atingida e reposicionamento da(s) bola(s).
+void msgFim() {
+
+  fill(corTexto);
+  text("PARABÉNS! VOCÊ ATINGIU A PONTUAÇÃO MÁXIMA!", width/2, height/2.3);
+  text("PONTUAÇÃO: " + pontos, width/2, height/2);
+
+  if (fase1 == true) {
+    text("PRESSIONE ENTER PARA IR PARA A PRÓXIMA FASE", width/2, height/1.8);
+  } else {
+    text("FIM DE JOGO!", width/2, height/1.8);
+  }
+}
+
+//Relação da posição dos blocos e da bolinha para obter as colisões.
+void mostrarBlocos() { 
+  for (int i = 0; i < Blocos.length; i++) {
+    for (int j = 0; j < Blocos[0].length; j++) {
+      Blocos[i][j].desenha();
+      Blocos[i][j].checaBola(a);
+      Blocos[i][j].checaBola(b);
+    }
+  }
+}
+
+//Estrutura de elementos gráficos móveis.
+void mostraCenario(int linhas, int colunas) { //Desenho dos elementos na tela (bola, barra e blocos).
+  a = new Bola();
+  b = new Bola();
+
+  Barra = new Barra();
+  Blocos = new Blocos[linhas][colunas];
+
+  for (int i = 0; i < Blocos.length; i++) {
+    for (int j = 0; j < Blocos[0].length; j++) {
+      Blocos[i][j] = new Blocos(i, j+1, Blocos.length);
+    }
+  }
+}
+
+boolean limpaBlocos() { //Remoção de blocos após colisão com a bolinha.
+  for (int i = 0; i < Blocos.length; i++) {
+    for (int j = 0; j < Blocos[0].length; j++) {
+      if (Blocos[i][j].status) { //No objeto "Blocos" existe uma variável booleana "status" que, enquanto "true" exibe os blocos. Após a colisão, muda para "false" e o bloco some.
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+void mousePressed() {
+
+  if (vidas > 0 && fase1 == true) { //Condição para reinício de jogo.
+    a.yBola -= 10;
+    a.iniciar = true;
+    
+  } else if (vidas > 0 && fase2 == true) {
+    a.yBola -= 10;
+    b.yBola -= 10;
+    a.iniciar = true;
+    b.iniciar = true;
+  } else {
+    setup();
+  }
+}
+
+void keyPressed() {
+  if (fase1 == true && pontos == a.pontMaxima && keyCode == ENTER) {
+    
+    fase1 = false;
+    fase2 = true;
+
+    vidas = vidas + vidas;
+    linhas = linhas + linhas;
+    colunas = colunas + colunas;
+    mostraCenario(colunas, linhas);
+    pontos = 0;
+    Barra.wBarra = height/4;
+  }
+}
